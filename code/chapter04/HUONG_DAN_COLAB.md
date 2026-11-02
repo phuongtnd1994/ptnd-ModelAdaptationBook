@@ -74,6 +74,7 @@ Test pass; backend `hf` cho accuracy cao hơn hẳn `mock`; Hit@3 của RAG cao;
 | Backend `hf` OOM | Thêm `--model meta-llama/Llama-3.2-3B-Instruct` hoặc dùng backend `mock`. |
 | `sentence-transformers` lỗi | Dùng `--backend hash`. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

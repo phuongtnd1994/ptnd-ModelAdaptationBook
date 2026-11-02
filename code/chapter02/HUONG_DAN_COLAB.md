@@ -73,6 +73,7 @@ Log `Step 1..5`, loss giảm trong 20 bước, peak GPU ~9 GB. Adapter (~130 MB)
 | `bf16`/`Attempting to unscale FP16 gradients` | Đang dùng T4 → đổi runtime sang L4/A100. |
 | `CUDA out of memory` | Giảm `max_length` từ 512 xuống 256 trong `chapter02/quickstart.py`. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

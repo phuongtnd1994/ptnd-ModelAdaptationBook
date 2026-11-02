@@ -75,6 +75,7 @@ Loss giảm qua 3 epoch; adapter (~130 MB) trong `chapter05/runs/it_lora/`. Toke
 | `Some parameters are on the meta device` | GPU hết bộ nhớ và đang offload sang CPU → restart runtime để giải phóng VRAM. |
 | Runtime ngắt giữa chừng | Lưu `chapter05/runs` sang Drive sau mỗi bước dài. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

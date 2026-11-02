@@ -74,6 +74,7 @@ Phần 2: 45 ứng viên (15×3 nhãn), phần lớn qua quality gate, manifest 
 | `Can't pickle ... safe_open` | `pip install "safetensors<0.6"` rồi Runtime > Restart session. |
 | OOM ở phần 3 | Đặt `LOAD_IN_4BIT = True` trong `chapter03/ch03_data_quality_helpers.py`. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

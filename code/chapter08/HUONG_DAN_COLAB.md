@@ -77,6 +77,7 @@ DPO giữ hoặc cải thiện chất lượng so với SFT, không tụt safety
 | `RateLimitError` từ Claude | Giảm `--workers` xuống 2. |
 | Không tìm thấy SFT model | Chạy lại ô tải từ Hugging Face. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

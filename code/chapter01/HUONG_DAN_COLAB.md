@@ -71,6 +71,7 @@ Model gốc tự tin bịa ra thông tin chính sách và thêm câu rào đón 
 | `CUDA out of memory` | Dùng L4/A100, hoặc chỉ chạy bước 1 (base-only). |
 | Tải model chậm | Thêm `HF_TOKEN` vào Secrets. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

@@ -75,6 +75,7 @@ Drift score thấp cho valid, cao cho shifted set; rollback đưa v1 về produc
 | `Version tag already exists` | Xoá `chapter09/runs/colab_registry` rồi chạy lại Stage 1. |
 | OOM ở canary/safety | Cần ≥ 8 GB VRAM; vẫn chạy được Stage 1, 2, 4 trên CPU. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

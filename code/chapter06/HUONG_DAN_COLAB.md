@@ -73,6 +73,7 @@ Token F1 tổng thể: base ≈ 0.153, SFT ≈ 0.168. Safety regression không t
 | OOM khi train trên L4 | Bình thường — full SFT cần ~32,5 GB. Dùng Đường A hoặc LoRA (chương 5). |
 | Hết ổ đĩa | Checkpoint trung gian 22–24 GB mỗi cái; giảm `save_total_limit` trong `chapter06/train_sft.py`. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).

@@ -76,6 +76,7 @@ Student đạt ~98% Token F1 của teacher (≈0.165 vs 0.168), cao hơn base (�
 | Teacher not found | Chạy lại ô tải `ch6-sft` ở bước 0. |
 | Quality filter loại quá nhiều | Xem tham số lọc trong `chapter07/scripts/prepare_distillation_data.py`. |
 | `No module named 'chapterXX'` | Chạy lại ô cài đặt đầu tiên (nó `cd` vào `code/` và thêm vào `sys.path`). |
+| pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
 Tài liệu gốc của chương: [README.md](README.md).
