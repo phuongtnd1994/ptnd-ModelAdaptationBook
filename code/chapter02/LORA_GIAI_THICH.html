@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LoRA qua Quickstart Chương 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sổ tay kỹ thuật — mục lục dính bên trái, nội dung một cột; xanh = trọng số đóng băng, cam = phần LoRA được train */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #56636f;
+  --line: #d9dfe5;
+  --frozen: #3d6d9e;
+  --frozen-soft: #dbe6f1;
+  --train: #d2691e;
+  --train-soft: #fbe5d3;
+  --code-bg: #eef1f4;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+    --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+  --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.7 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.shell { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding-block: 40px 80px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; }
+nav.toc p { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a { display: flex; gap: 8px; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); background: var(--surface); outline: none; }
+main { min-width: 0; }
+header.hero { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--train); font-weight: 600; margin: 0 0 8px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 48px); line-height: 1.15; margin: 0 0 16px; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1.25; margin: 0 0 16px; text-wrap: balance; }
+h3 { font-size: 18px; margin: 24px 0 8px; }
+p, li { max-width: 68ch; }
+.lede { font-size: 19px; color: var(--muted); margin: 0; }
+section { padding-block: 48px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+.num { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.src { font-size: 12px; color: var(--muted); margin: -8px 0 16px; font-family: var(--font-mono); }
+.hl-t { color: var(--train); font-weight: 600; }
+.hl-f { color: var(--frozen); font-weight: 600; }
+.cm { color: var(--muted); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.tag.f { background: var(--frozen-soft); color: var(--frozen); }
+.tag.t { background: var(--train-soft); color: var(--train); }
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; overflow-x: auto; }
+.figure svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.figure figcaption, .caption { font-size: 14px; color: var(--muted); margin-top: 12px; }
+svg text { fill: var(--ink); font-family: var(--font-body); }
+svg .muted { fill: var(--muted); }
+svg .f { fill: var(--frozen-soft); stroke: var(--frozen); stroke-width: 1.5; }
+svg .t { fill: var(--train-soft); stroke: var(--train); stroke-width: 1.5; }
+svg .v { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+svg .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+svg .ft { fill: var(--frozen); font-weight: 600; }
+svg .tt { fill: var(--train); font-weight: 600; }
+.formula { font-family: var(--font-mono); font-size: 18px; text-align: center; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin: 20px 0; overflow-x: auto; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 20px 0; }
+.cols > div { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+.cols h3 { margin-top: 0; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; display: grid; gap: 20px; }
+.calc label { font-weight: 600; }
+.calc input[type=range] { width: 100%; accent-color: var(--train); }
+.mods { display: flex; flex-wrap: wrap; gap: 8px; }
+.mods label { font-weight: 500; font-family: var(--font-mono); font-size: 13px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.mods input { accent-color: var(--train); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { border-left: 3px solid var(--train); padding: 4px 12px; }
+.stat b { display: block; font-family: var(--font-mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.bar { height: 14px; background: var(--frozen-soft); border-radius: 7px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--train); min-width: 2px; }
+.steps { display: grid; gap: 0; counter-reset: s; margin: 16px 0; padding: 0; list-style: none; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); max-width: none; }
+.steps > li::before { content: counter(s); font-family: var(--font-mono); font-weight: 600; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-size: 14px; }
+.steps h3 { margin: 4px 0 4px; }
+.note { border-left: 3px solid var(--frozen); background: var(--surface); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+.note p { margin: 0; }
+dl.gloss { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 10px 20px; }
+dl.gloss dt { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
+dl.gloss dd { margin: 0; }
+@media (max-width: 820px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; }
+  nav.toc { position: static; }
+  nav.toc ol { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.gloss dd { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+<nav class="toc" aria-label="Mục lục">
+  <p>Mục lục</p>
+  <ol>
+    <li><a href="#van-de">Vấn đề cần giải</a></li>
+    <li><a href="#y-tuong">Ý tưởng LoRA</a></li>
+    <li><a href="#tinh-toan">Tự tính số tham số</a></li>
+    <li><a href="#vi-tri">Gắn LoRA vào đâu</a></li>
+    <li><a href="#tham-so">Các tham số LoRA</a></li>
+    <li><a href="#nam-buoc">5 bước trong code</a></li>
+    <li><a href="#du-lieu">Dữ liệu train / valid / test</a></li>
+    <li><a href="#train">Cấu hình train</a></li>
+    <li><a href="#bo-nho">Vì sao chỉ cần ~9 GB</a></li>
+    <li><a href="#doc-log">Đọc log khi chạy</a></li>
+    <li><a href="#danh-gia">Đánh giá model</a></li>
+    <li><a href="#ket-qua">Dùng adapter sau khi train</a></li>
+    <li><a href="#thu-nghiem">Thử nghiệm tiếp</a></li>
+    <li><a href="#thuat-ngu">Thuật ngữ</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">Chương 2 · code/chapter02/quickstart.py</p>
+  <h1>LoRA: dạy model mới mà không đụng vào model cũ</h1>
+  <p class="lede">Giải thích LoRA dựa trên đúng script quickstart bạn vừa chạy trên Colab: fine-tune Qwen3-4B trên 40 câu hỏi IT-support, 20 bước, khoảng 10 phút trên L4. Mỗi con số trong trang này lấy từ code hoặc từ cấu hình thật của Qwen3-4B.</p>
+</header>
+
+<section id="van-de">
+  <p class="num">01</p>
+  <h2>Vấn đề: model 4 tỉ tham số quá nặng để train toàn bộ</h2>
+  <p>Qwen3-4B có khoảng <strong>4 tỉ</strong> con số (trọng số). Muốn model trả lời câu hỏi IT theo phong cách riêng, cách trực tiếp nhất là train lại <em>tất cả</em> 4 tỉ con số đó. Đó là <strong>full fine-tuning</strong>, cách chương 6 làm.</p>
+  <div class="cols">
+    <div>
+      <h3>Full fine-tuning (chương 6)</h3>
+      <p>Mỗi tham số cần trọng số + gradient + 2 trạng thái của optimizer AdamW, khoảng 8 byte/tham số.</p>
+      <p><strong>≈ 32,5 GB VRAM</strong>, không vừa một GPU 24 GB. Kết quả là một model mới nặng ~8 GB.</p>
+    </div>
+    <div>
+      <h3>LoRA (chương 2 và 5)</h3>
+      <p>Giữ nguyên 4 tỉ trọng số gốc, chỉ train thêm khoảng <strong>33 triệu</strong> tham số nhỏ đặt cạnh chúng.</p>
+      <p><strong>≈ 9 GB VRAM</strong>, vừa L4. Kết quả là một <em>adapter</em> ~130 MB.</p>
+    </div>
+  </div>
+  <p>LoRA viết tắt của <strong>Low-Rank Adaptation</strong>: thích nghi model bằng các ma trận <em>hạng thấp</em>. Phần tiếp theo giải thích "hạng thấp" nghĩa là gì.</p>
+</section>
+
+<section id="y-tuong">
+  <p class="num">02</p>
+  <h2>Ý tưởng: thay đổi cần học có thể nén lại</h2>
+  <p>Mỗi lớp tuyến tính trong model là một ma trận <code>W</code>. Ví dụ <code>q_proj</code> của Qwen3-4B có kích thước 4096 × 2560, tức khoảng 10,5 triệu số. Fine-tune nghĩa là tìm một lượng điều chỉnh <code>ΔW</code> cùng kích thước để cộng vào <code>W</code>.</p>
+  <p>Quan sát cốt lõi của LoRA: lượng điều chỉnh cần cho một nhiệm vụ hẹp (trả lời câu hỏi IT) <strong>không cần đầy đủ 10,5 triệu bậc tự do</strong>. Có thể viết nó gần đúng bằng tích của hai ma trận mảnh:</p>
+  <div class="formula">ΔW = <span class="hl-t">B</span> · <span class="hl-t">A</span> &nbsp;&nbsp; với &nbsp; <span class="hl-t">B</span>: 4096 × r, &nbsp; <span class="hl-t">A</span>: r × 2560, &nbsp; r = 16</div>
+  <figure class="figure">
+    <svg viewBox="0 0 720 300" width="720" role="img" aria-label="Sơ đồ LoRA: đầu vào x đi qua W đóng băng và nhánh B nhân A được train, hai kết quả cộng lại">
+      <text x="20" y="150" font-size="15">x</text>
+      <text x="8" y="170" font-size="11" class="muted">2560 số</text>
+      <rect x="40" y="70" width="14" height="160" class="v"/>
+      <path d="M60 150 H 110 M 110 150 V 80 H 150 M 110 150 V 230 H 150" class="arrow"/>
+      <rect x="150" y="30" width="170" height="110" rx="4" class="f"/>
+      <text x="235" y="80" text-anchor="middle" font-size="20" class="ft">W</text>
+      <text x="235" y="102" text-anchor="middle" font-size="12" class="muted">4096 × 2560 · đóng băng</text>
+      <text x="235" y="120" text-anchor="middle" font-size="12" class="muted">10.485.760 số</text>
+      <rect x="150" y="212" width="170" height="20" rx="3" class="t"/>
+      <text x="235" y="227" text-anchor="middle" font-size="12" class="tt">A · 16 × 2560</text>
+      <path d="M320 222 H 360" class="arrow"/>
+      <rect x="360" y="170" width="22" height="110" rx="3" class="t"/>
+      <text x="371" y="164" text-anchor="middle" font-size="12" class="tt">B</text>
+      <text x="400" y="230" font-size="12" class="muted">4096 × 16</text>
+      <text x="400" y="248" font-size="12" class="muted">× α/r = 2</text>
+      <path d="M320 85 H 520 M 382 225 H 520 V 165" class="arrow"/>
+      <path d="M520 85 V 135" class="arrow"/>
+      <circle cx="520" cy="150" r="15" class="v"/>
+      <text x="520" y="156" text-anchor="middle" font-size="18">+</text>
+      <path d="M535 150 H 600" class="arrow"/>
+      <rect x="600" y="70" width="14" height="160" class="v"/>
+      <text x="630" y="150" font-size="15">h</text>
+      <text x="630" y="170" font-size="11" class="muted">4096 số</text>
+      <text x="150" y="272" font-size="12" class="tt">A + B: 106.496 số được train (≈ 1% của W)</text>
+    </svg>
+    <figcaption>Đầu vào <code>x</code> đi qua hai nhánh. Nhánh xanh là trọng số gốc, không đổi. Nhánh cam là adapter LoRA: nén <code>x</code> xuống 16 chiều bằng <code>A</code>, rồi mở rộng lại 4096 chiều bằng <code>B</code>. Kết quả hai nhánh cộng lại.</figcaption>
+  </figure>
+  <div class="formula">h = <span class="hl-f">W</span>·x + (α / r) · <span class="hl-t">B</span>·<span class="hl-t">A</span>·x</div>
+  <h3>Ba chi tiết quan trọng</h3>
+  <ul>
+    <li><strong><code>B</code> khởi tạo bằng 0.</strong> Ở bước 0, <code>B·A = 0</code> nên model y hệt model gốc. Việc train bắt đầu từ đúng điểm xuất phát của model gốc, không làm hỏng gì ngay từ đầu.</li>
+    <li><strong>Chỉ gradient của <code>A</code> và <code>B</code> được tính và cập nhật.</strong> <code>W</code> chỉ tham gia tính toán xuôi, nên optimizer không phải lưu trạng thái cho 4 tỉ số.</li>
+    <li><strong>Có thể tắt hoặc bật adapter.</strong> Bỏ nhánh cam đi là có lại model gốc. Bước 4 của quickstart dùng đúng tính chất này để so sánh trước và sau.</li>
+  </ul>
+</section>
+
+<section id="tinh-toan">
+  <p class="num">03</p>
+  <h2>Tự tính: r và target_modules ảnh hưởng thế nào</h2>
+  <p>Kéo thanh <code>r</code> và bật/tắt các module để xem số tham số được train thay đổi ra sao. Kích thước các ma trận lấy từ cấu hình Qwen3-4B: 36 lớp, hidden 2560, MLP 9728, 32 head query và 8 head key/value, mỗi head 128 chiều.</p>
+  <div class="calc">
+    <div>
+      <label for="r">Rank r = <span id="rval">16</span></label>
+      <input type="range" id="r" min="1" max="128" value="16" step="1">
+    </div>
+    <div>
+      <label>target_modules</label>
+      <div class="mods" id="mods"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sParams">–</b><span>tham số được train</span></div>
+      <div class="stat"><b id="sPct">–</b><span>so với ~4,02 tỉ của model</span></div>
+      <div class="stat"><b id="sMb">–</b><span>kích thước adapter (fp32)</span></div>
+    </div>
+    <div>
+      <div class="bar" aria-hidden="true"><i id="sBar"></i></div>
+      <p class="caption">Thanh xanh là toàn bộ model, phần cam là phần LoRA được train (phóng đại ×10 để nhìn thấy được).</p>
+    </div>
+  </div>
+  <p>Với cấu hình mặc định của quickstart (<code>r = 16</code>, đủ 7 module), số tham số được train là <strong>33.030.144</strong>, khoảng <strong>0,8%</strong> model. Lưu ở fp32 (4 byte/số) ra khoảng 132 MB, khớp với file <code>adapter_model.safetensors</code> ~130 MB mà README chương 2 nhắc tới.</p>
+</section>
+
+<section id="vi-tri">
+  <p class="num">04</p>
+  <h2>Gắn LoRA vào đâu trong model</h2>
+  <p>Qwen3-4B gồm 36 khối transformer giống nhau. Mỗi khối có 7 ma trận tuyến tính lớn, và quickstart gắn adapter vào <strong>cả 7</strong>:</p>
+  <pre><code>TARGET_MODULES = [
+    "q_proj", "k_proj", "v_proj", "o_proj",   <span class="cm"># attention</span>
+    "up_proj", "gate_proj", "down_proj",      <span class="cm"># MLP</span>
+]</code></pre>
+  <p class="src">quickstart.py, dòng 62–70</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Module</th><th>Vai trò</th><th>Kích thước W (ra × vào)</th><th>Tham số LoRA khi r = 16</th></tr></thead>
+      <tbody>
+        <tr><td><code>q_proj</code></td><td>Tạo "câu hỏi" (query): token này đang tìm thông tin gì</td><td class="n">4096 × 2560</td><td class="n">106.496</td></tr>
+        <tr><td><code>k_proj</code></td><td>Tạo "nhãn" (key) để các token khác tìm thấy token này</td><td class="n">1024 × 2560</td><td class="n">57.344</td></tr>
+        <tr><td><code>v_proj</code></td><td>Tạo nội dung (value) được chuyển đi khi khớp</td><td class="n">1024 × 2560</td><td class="n">57.344</td></tr>
+        <tr><td><code>o_proj</code></td><td>Gộp kết quả các head attention</td><td class="n">2560 × 4096</td><td class="n">106.496</td></tr>
+        <tr><td><code>gate_proj</code></td><td>MLP: quyết định thông tin nào đi qua</td><td class="n">9728 × 2560</td><td class="n">196.608</td></tr>
+        <tr><td><code>up_proj</code></td><td>MLP: mở rộng lên 9728 chiều</td><td class="n">9728 × 2560</td><td class="n">196.608</td></tr>
+        <tr><td><code>down_proj</code></td><td>MLP: thu gọn về 2560 chiều</td><td class="n">2560 × 9728</td><td class="n">196.608</td></tr>
+        <tr><td colspan="3"><strong>Một khối</strong> × 36 khối</td><td class="n"><strong>917.504 × 36 = 33.030.144</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Công thức cho mỗi module: <code>r × (vào + ra)</code>. Ví dụ <code>q_proj</code>: 16 × (2560 + 4096) = 106.496. Bài báo LoRA gốc chỉ gắn vào <code>q_proj</code> và <code>v_proj</code>. Các nghiên cứu sau (và sách này) thấy gắn vào cả MLP cho kết quả tốt hơn, vì MLP là nơi model lưu nhiều "kiến thức".</p>
+</section>
+
+<section id="tham-so">
+  <p class="num">05</p>
+  <h2>Các tham số LoRA trong code</h2>
+  <pre><code>LORA_R = 16
+LORA_ALPHA = 32
+LORA_DROPOUT = 0.05
+
+lora_config = LoraConfig(
+    r=LORA_R,
+    lora_alpha=LORA_ALPHA,
+    lora_dropout=LORA_DROPOUT,
+    target_modules=TARGET_MODULES,
+    bias="none",
+    task_type="CAUSAL_LM",
+)</code></pre>
+  <p class="src">quickstart.py, dòng 59–61 và 129–136</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Tham số</th><th>Giá trị</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><code>r</code></td><td class="n">16</td><td>Độ "rộng" của ma trận nén. r lớn thì adapter học được thay đổi phức tạp hơn nhưng nặng hơn và dễ học thuộc lòng dữ liệu. 8–64 là khoảng thường dùng.</td></tr>
+        <tr><td><code>lora_alpha</code></td><td class="n">32</td><td>Hệ số khuếch đại. Đầu ra của nhánh LoRA được nhân với <code>α / r = 32 / 16 = 2</code>. Quy ước phổ biến là đặt α = 2r, để khi đổi r thì không phải chỉnh lại learning rate nhiều.</td></tr>
+        <tr><td><code>lora_dropout</code></td><td class="n">0.05</td><td>Khi train, ngẫu nhiên bỏ 5% đầu vào của nhánh LoRA để adapter không học thuộc lòng 40 ví dụ. Khi suy luận, dropout bị tắt.</td></tr>
+        <tr><td><code>target_modules</code></td><td>7 module</td><td>Ma trận nào được gắn adapter (xem mục 04).</td></tr>
+        <tr><td><code>bias</code></td><td><code>"none"</code></td><td>Không train các vector bias, chỉ train <code>A</code> và <code>B</code>.</td></tr>
+        <tr><td><code>task_type</code></td><td><code>"CAUSAL_LM"</code></td><td>Model sinh văn bản từ trái sang phải (dự đoán token tiếp theo). PEFT dựa vào đây để bọc model cho đúng.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><p>Lưu ý: <code>LoraConfig</code> chỉ là bản mô tả. Adapter thật được gắn vào model khi bạn truyền <code>peft_config=lora_config</code> cho <code>SFTTrainer</code> ở bước 3.</p></div>
+</section>
+
+<section id="nam-buoc">
+  <p class="num">06</p>
+  <h2>Năm bước trong quickstart.py</h2>
+  <p>Hàm <code>main()</code> gọi lần lượt năm hàm, đúng thứ tự log bạn thấy trên Colab:</p>
+  <pre><code>train_ds, valid_ds, demo_rows = step1_prepare_dataset()
+model, tokenizer, lora_config = step2_load_model_and_lora()
+trainer = step3_train(model, tokenizer, lora_config, train_ds, valid_ds)
+samples = step4_compare(trainer.model, tokenizer, demo_rows)
+step5_save(trainer, tokenizer, samples)</code></pre>
+  <p class="src">quickstart.py, dòng 281–285</p>
+  <ol class="steps">
+    <li><div>
+      <h3>Chuẩn bị dữ liệu</h3>
+      <p>Đọc <code>data/it_support_fmt/train.jsonl</code> và <code>valid.jsonl</code>, lấy <strong>40 ví dụ train</strong>, <strong>5 ví dụ valid</strong> và <strong>3 câu demo</strong>. Mỗi ví dụ là một đoạn hội thoại dạng chat:</p>
+      <pre><code>{"messages": [
+  {"role": "system",    "content": "..."},
+  {"role": "user",      "content": "Câu hỏi IT từ Stack Exchange"},
+  {"role": "assistant", "content": "Summary: ...\nSteps: 1. ... 2. ..."}
+]}</code></pre>
+      <p>Model học cách viết phần <code>assistant</code> khi được cho phần <code>user</code>.</p>
+    </div></li>
+    <li><div>
+      <h3>Nạp model gốc và khai báo LoRA</h3>
+      <pre><code>model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL, device_map=resolve_device_map(), dtype=torch.bfloat16, ...)
+model.gradient_checkpointing_enable()
+model.config.use_cache = False</code></pre>
+      <p>Nạp Qwen3-4B ở <code>bfloat16</code> (2 byte/số, ~8 GB). <strong>Gradient checkpointing</strong> giảm bộ nhớ khi train: không giữ mọi kết quả trung gian mà tính lại khi cần. <code>use_cache</code> tắt vì cache chỉ có ích khi sinh văn bản.</p>
+    </div></li>
+    <li><div>
+      <h3>Train 20 bước</h3>
+      <pre><code>trainer = SFTTrainer(model=model, args=config,
+    train_dataset=train_ds, eval_dataset=valid_ds,
+    <span class="hl-t">peft_config=lora_config</span>, processing_class=tokenizer)
+trainer.train()</code></pre>
+      <p><code>SFTTrainer</code> (thư viện TRL) gắn adapter vào model, <span class="tag f">đóng băng</span> toàn bộ trọng số gốc, chỉ để <span class="tag t">A, B</span> được train. Sau đó nó chạy vòng lặp: tính loss, lan truyền ngược, cập nhật A và B. Chi tiết cấu hình ở mục 07.</p>
+    </div></li>
+    <li><div>
+      <h3>So sánh trước và sau trên 3 câu chưa thấy</h3>
+      <pre><code>model.eval()
+with model.disable_adapter():
+    before = generate(model, tokenizer, prompt)   <span class="cm"># model gốc</span>
+after = generate(model, tokenizer, prompt)        <span class="cm"># gốc + LoRA</span></code></pre>
+      <p>Mẹo hay: không cần nạp hai model. <code>disable_adapter()</code> tạm bỏ nhánh cam, nên cùng một model cho ra câu trả lời "trước". Ra khỏi khối <code>with</code> thì adapter bật lại cho câu "sau". <code>do_sample=False</code> (greedy) giúp kết quả giống nhau mỗi lần chạy.</p>
+    </div></li>
+    <li><div>
+      <h3>Lưu adapter</h3>
+      <pre><code>trainer.model.save_pretrained("chapter02/runs/ch2_quickstart")</code></pre>
+      <p>Với model đã gắn LoRA, <code>save_pretrained</code> <strong>chỉ lưu A và B</strong> (~130 MB) cùng <code>adapter_config.json</code>, không lưu 8 GB trọng số gốc. Kèm theo là <code>manifest.json</code> ghi lại seed, cấu hình và 3 câu trả lời mẫu để đối chiếu sau này.</p>
+    </div></li>
+  </ol>
+</section>
+
+<section id="du-lieu">
+  <p class="num">07</p>
+  <h2>Dữ liệu: train, valid và test được tổ chức thế nào</h2>
+  <p>Bộ dữ liệu IT-support được tạo bằng <code>scripts/build_it_support_dataset.py</code> với <code>seed = 42</code>, nên ai chạy lại cũng ra đúng các file giống nhau. Thông tin nguồn và số lượng được ghi trong <code>data/it_support/manifest.json</code>.</p>
+
+  <h3>Nguồn dữ liệu</h3>
+  <div class="cols">
+    <div>
+      <h3>Câu hỏi IT thật (80%)</h3>
+      <p>Hỏi đáp từ Super User, Ask Ubuntu và Server Fault. Kho ứng viên có <strong>10.864</strong> cặp hỏi đáp sau khi lọc: câu hỏi 30–1.200 ký tự, câu trả lời 50–2.000 ký tự. Nguồn gốc từng câu nằm trong <code>attribution.jsonl</code> (giấy phép CC-BY-SA).</p>
+    </div>
+    <div>
+      <h3>Câu hỏi phổ thông (20%)</h3>
+      <p>90 câu từ Databricks Dolly, ví dụ "What is a speedrun in video games?". Mục đích là để model <strong>không quên kỹ năng chung</strong> khi chỉ được học toàn câu IT. Hiện tượng quên này gọi là <em>catastrophic forgetting</em>.</p>
+    </div>
+  </div>
+
+  <h3>Bốn file, bốn vai trò</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>File</th><th>Số dòng</th><th>Thành phần</th><th>Dùng để</th></tr></thead>
+      <tbody>
+        <tr><td><code>train.jsonl</code></td><td class="n">450</td><td>360 IT + 90 Dolly</td><td><strong>Học</strong>: chỉ file này làm thay đổi trọng số adapter.</td></tr>
+        <tr><td><code>valid.jsonl</code></td><td class="n">50</td><td>Chỉ IT</td><td><strong>Theo dõi khi train</strong> (eval_loss) và chọn cấu hình: r nào, bao nhiêu bước.</td></tr>
+        <tr><td><code>test.jsonl</code></td><td class="n">50</td><td>Chỉ IT</td><td><strong>Báo cáo kết quả cuối cùng.</strong> Không bước train hay chọn cấu hình nào được nhìn vào file này.</td></tr>
+        <tr><td><code>preferences.jsonl</code></td><td class="n">300</td><td>Cặp trả lời tốt / kém</td><td>Dành cho DPO ở chương 8.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Vì sao cần cả valid lẫn test? Nếu bạn thử 10 cấu hình rồi chọn cái có điểm valid cao nhất, điểm valid đó đã bị "chọn lọc" nên lạc quan hơn thực tế. Test là bộ đề thi không ai được xem trước, cho con số trung thực khi đem model ra dùng thật.</p>
+
+  <h3>Ba quy tắc khi chia dữ liệu</h3>
+  <ul>
+    <li><strong>Không trùng lặp.</strong> Script xáo trộn kho câu hỏi, lấy train trước, rồi valid, rồi test. Câu nào đã lấy sẽ được đánh dấu để không lấy lại. Test còn dùng bộ sinh ngẫu nhiên riêng (<code>seed + 1</code>).</li>
+    <li><strong>Phân tầng theo chủ đề.</strong> Có 6 chủ đề IT: windows, linux, networking, hardware, software, security. Train có 51 câu mỗi chủ đề. Valid và test mỗi chủ đề 7 câu, cộng 8 câu "general". Như vậy điểm trên test không bị lệch vì thiếu một chủ đề.</li>
+    <li><strong>Valid và test chỉ có câu IT.</strong> Vì mục tiêu là đo năng lực hỗ trợ IT. Câu Dolly chỉ có mặt trong train để giữ kỹ năng chung.</li>
+  </ul>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Chủ đề</th><th>train</th><th>valid</th><th>test</th></tr></thead>
+      <tbody>
+        <tr><td>general (gồm 90 câu Dolly)</td><td class="n">144</td><td class="n">8</td><td class="n">8</td></tr>
+        <tr><td>windows · linux · networking · hardware · software · security</td><td class="n">51 mỗi loại</td><td class="n">7 mỗi loại</td><td class="n">7 mỗi loại</td></tr>
+        <tr><td><strong>Tổng</strong></td><td class="n"><strong>450</strong></td><td class="n"><strong>50</strong></td><td class="n"><strong>50</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Hai phiên bản câu trả lời</h3>
+  <p>Câu trả lời trên Stack Exchange viết đủ kiểu. Để model học được một <strong>phong cách thống nhất</strong>, script <code>scripts/reformat_it_answers.py</code> dùng một LLM viết lại câu trả lời theo định dạng chuẩn của "phòng IT", với dòng <code>**Summary:**</code> và danh sách <code>**Steps:**</code>:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Thư mục</th><th>Nội dung</th><th>Dùng ở đâu</th></tr></thead>
+      <tbody>
+        <tr><td><code>data/it_support/</code></td><td>Câu trả lời gốc từ Stack Exchange</td><td>Tham chiếu khi chấm test (Token F1)</td></tr>
+        <tr><td><code>data/it_support_fmt/</code></td><td>Cùng câu hỏi, câu trả lời viết lại theo định dạng chuẩn</td><td>Train và eval_loss trong quickstart</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Một dòng trong <code>data/it_support_fmt/train.jsonl</code> (rút gọn):</p>
+  <pre><code>{
+  "category": "software",
+  "source": "askubuntu.com",
+  "messages": [
+    {"role": "system", "content": "You are an IT support assistant. Provide clear, step-by-step answers."},
+    {"role": "user", "content": "when I put mongo command on terminal it gives me error like
+       mongo: error while loading shared libraries: libmozjs.so: cannot open shared object file"},
+    {"role": "assistant", "content": "**Summary:** The libmozjs.so error occurs due to a bug in the
+       mongodb package; fix it by removing the package and installing mongodb-snapshot ...
+       **Steps:**\n1. Remove the existing MongoDB installation: sudo apt-get --purge remove mongodb\n2. ..."}
+  ]
+}</code></pre>
+
+  <h3>Quickstart lấy những gì</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Biến trong code</th><th>Lấy từ</th><th>Số lượng</th></tr></thead>
+      <tbody>
+        <tr><td><code>train_ds</code></td><td><code>it_support_fmt/train.jsonl[:40]</code></td><td class="n">40</td></tr>
+        <tr><td><code>valid_ds</code></td><td><code>it_support_fmt/valid.jsonl[:5]</code></td><td class="n">5</td></tr>
+        <tr><td><code>demo_rows</code></td><td><code>it_support_fmt/valid.jsonl[5:8]</code></td><td class="n">3</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Ba câu demo nằm trong valid nhưng <strong>khác</strong> 5 câu dùng tính eval_loss, và chưa từng có trong train. Nhờ vậy bước 4 so sánh trên câu hỏi model thật sự chưa thấy. Quickstart không đụng tới test: test để dành cho chương 5 trở đi.</p>
+  <div class="note"><p>Khi train, <code>SFTTrainer</code> áp chat template của Qwen để nối system, user và assistant thành một chuỗi token. Model học dự đoán token tiếp theo trên chuỗi đó. Theo mặc định của TRL với dữ liệu dạng <code>messages</code>, loss được tính trên cả chuỗi chứ không chỉ phần trả lời.</p></div>
+</section>
+
+<section id="train">
+  <p class="num">08</p>
+  <h2>Cấu hình train: hiểu từng con số</h2>
+  <pre><code>config = SFTConfig(
+    max_steps=20,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=8,
+    learning_rate=2e-4,
+    warmup_ratio=0.1,
+    max_length=512,
+    max_grad_norm=1.0,
+    logging_steps=5, eval_strategy="steps", eval_steps=10,
+    bf16=True, seed=42,
+)</code></pre>
+  <p class="src">quickstart.py, dòng 185–203 (rút gọn, giá trị khi chạy trên GPU L4/A100)</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Tham số</th><th>Giá trị</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><code>per_device_train_batch_size</code></td><td class="n">1</td><td>Mỗi lần tính chỉ đưa 1 ví dụ vào GPU để tiết kiệm bộ nhớ.</td></tr>
+        <tr><td><code>gradient_accumulation_steps</code></td><td class="n">8</td><td>Cộng dồn gradient của 8 ví dụ rồi mới cập nhật một lần. Batch hiệu dụng = 1 × 8 = <strong>8</strong>.</td></tr>
+        <tr><td><code>max_steps</code></td><td class="n">20</td><td>Cập nhật trọng số 20 lần. 40 ví dụ ÷ 8 = 5 bước mỗi lượt dữ liệu (epoch), nên 20 bước ≈ <strong>4 epoch</strong>, tức model xem mỗi ví dụ khoảng 4 lần.</td></tr>
+        <tr><td><code>learning_rate</code></td><td class="n">2e-4</td><td>Bước nhảy khi cập nhật. LoRA dùng learning rate cao hơn full fine-tune (chương 6 dùng 2e-5) vì A, B nhỏ và bắt đầu từ 0.</td></tr>
+        <tr><td><code>warmup_ratio</code></td><td class="n">0.1</td><td>10% số bước đầu (2 bước) tăng dần learning rate từ 0 để tránh cú sốc ban đầu.</td></tr>
+        <tr><td><code>max_length</code></td><td class="n">512</td><td>Cắt mỗi ví dụ còn tối đa 512 token. Ngắn hơn thì tốn ít bộ nhớ hơn.</td></tr>
+        <tr><td><code>max_grad_norm</code></td><td class="n">1.0</td><td>Giới hạn độ lớn gradient, phòng một bước "nổ" làm hỏng adapter.</td></tr>
+        <tr><td><code>bf16</code></td><td>True</td><td>Tính toán ở bfloat16. Đây là lý do T4 không chạy được: T4 không hỗ trợ bf16 gốc.</td></tr>
+        <tr><td><code>eval_steps</code></td><td class="n">10</td><td>Cứ 10 bước thì đo loss trên 5 ví dụ valid (ở bước 10 và 20).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="bo-nho">
+  <p class="num">09</p>
+  <h2>Vì sao LoRA chỉ cần khoảng 9 GB</h2>
+  <p>Bộ nhớ GPU khi train chia làm bốn phần. So sánh LoRA với full fine-tune trên cùng Qwen3-4B:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Thành phần</th><th>LoRA (quickstart)</th><th>Full fine-tune (chương 6)</th></tr></thead>
+      <tbody>
+        <tr><td>Trọng số model (bf16)</td><td class="n">~8 GB</td><td class="n">~8 GB</td></tr>
+        <tr><td>Gradient</td><td class="n">33 triệu số · ~0,1 GB</td><td class="n">4 tỉ số · ~8 GB</td></tr>
+        <tr><td>Trạng thái AdamW (2 số / tham số)</td><td class="n">~0,3 GB</td><td class="n">~16 GB</td></tr>
+        <tr><td>Kết quả trung gian (activations)</td><td class="n">nhỏ nhờ checkpointing</td><td class="n">nhỏ nhờ checkpointing</td></tr>
+        <tr><td><strong>Đo thực tế (đỉnh)</strong></td><td class="n"><strong>9,0 GB</strong> · 1 GPU</td><td class="n"><strong>32,5 GB</strong> · 2 GPU</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Phần lớn tiết kiệm đến từ gradient và optimizer: hai thứ này tỉ lệ với số tham số được train. LoRA giảm số đó khoảng 120 lần, nên chi phí còn lại gần như chỉ là việc giữ model gốc trên GPU. QLoRA (chương 5) đi thêm một bước: nén model gốc xuống 4-bit nên chỉ cần ~5 GB.</p>
+</section>
+
+<section id="doc-log">
+  <p class="num">10</p>
+  <h2>Đọc log khi chạy trên Colab</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Dòng log</th><th>Ý nghĩa</th><th>Kỳ vọng</th></tr></thead>
+      <tbody>
+        <tr><td><code>train=40 valid=5 demo=3</code></td><td>Bước 1 đã đọc đúng dữ liệu</td><td>Đúng ba con số này</td></tr>
+        <tr><td><code>loss</code> (mỗi 5 bước)</td><td>Model đoán token tiếp theo sai đến mức nào trên dữ liệu train</td><td>Giảm dần qua 20 bước</td></tr>
+        <tr><td><code>grad_norm</code></td><td>Độ lớn gradient trước khi bị cắt ở 1.0</td><td>Là số hữu hạn. <code>nan</code> nghĩa là train hỏng</td></tr>
+        <tr><td><code>eval_loss</code> (bước 10, 20)</td><td>Loss trên 5 ví dụ model chưa thấy</td><td>Giảm. Nếu train loss giảm mạnh mà eval loss tăng là đang học thuộc lòng</td></tr>
+        <tr><td><code>train wall time</code></td><td>Thời gian train</td><td>~78 giây trên A30, tương tự trên L4</td></tr>
+        <tr><td><code>BEFORE</code> / <code>AFTER</code></td><td>Câu trả lời trước và sau khi gắn adapter</td><td>AFTER bắt đầu theo định dạng <code>Summary:</code> + <code>Steps:</code> của dữ liệu</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><p>Với chỉ 40 ví dụ và 20 bước, thay đổi thường <strong>khá nhỏ</strong>. Đây là chủ ý của tác giả: quickstart chứng minh quy trình chạy được và sinh ra adapter dùng được, chưa khẳng định model đã thành chuyên gia IT. Chương 5 train trên 450 ví dụ, 3 epoch và đo kết quả kỹ hơn.</p></div>
+</section>
+
+<section id="danh-gia">
+  <p class="num">11</p>
+  <h2>Đánh giá: biết model có tốt lên thật không</h2>
+  <p>Sách đánh giá theo bốn tầng, từ nhanh và thô đến chậm và kỹ. Quickstart chương 2 làm tầng 1 và 2. Chương 5 làm tầng 3. Script <code>scripts/eval_3lens.py</code> làm tầng 4.</p>
+  <ol class="steps">
+    <li><div>
+      <h3>eval_loss trên valid, ngay trong lúc train</h3>
+      <p>Ở bước 10 và 20, trainer tính loss trên 5 câu valid. Con số này rẻ và tự động, nhưng chỉ cho biết model đoán token có khớp văn bản mẫu không, chưa nói câu trả lời có đúng hay hữu ích.</p>
+      <p>Dấu hiệu cần để ý: <strong>train loss giảm mà eval_loss tăng</strong> nghĩa là model đang học thuộc lòng 40 ví dụ (overfitting).</p>
+    </div></li>
+    <li><div>
+      <h3>Đọc bằng mắt: BEFORE / AFTER</h3>
+      <p>Bước 4 của quickstart: 3 câu chưa thấy, cùng prompt, cùng cách sinh greedy, chỉ khác adapter bật hay tắt. Thô nhưng hữu ích để phát hiện lỗi rõ ràng: lặp từ, trả lời lạc đề, mất định dạng.</p>
+    </div></li>
+    <li><div>
+      <h3>Chấm điểm tự động trên test (chương 5)</h3>
+      <p><code>python -m chapter05.scripts.listing_5_3_evaluate</code> cho model gốc và model + adapter trả lời <strong>50 câu test</strong>, rồi tính:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Chỉ số</th><th>Cách tính</th><th>Ý nghĩa</th></tr></thead>
+          <tbody>
+            <tr><td>Exact Match</td><td>Câu trả lời trùng khớp hoàn toàn với đáp án mẫu (sau khi chuẩn hoá chữ thường, dấu câu)</td><td>Gần như luôn bằng 0 với câu trả lời dài. Chỉ có ý nghĩa với câu ngắn.</td></tr>
+            <tr><td>Token F1</td><td>Mức độ trùng từ giữa câu trả lời và đáp án mẫu</td><td>Cho điểm một phần. Ví dụ bên dưới.</td></tr>
+            <tr><td>Safety (refusal rate)</td><td>Hỏi các câu nguy hiểm trong <code>safety_regression_prompts.jsonl</code> (jailbreak, vũ khí, tự hại, thù ghét, đánh cắp mật khẩu...) và đếm số lần model từ chối</td><td>Sau fine-tune, tỉ lệ từ chối <strong>không được giảm</strong> so với model gốc. Fine-tune có thể vô tình làm mất hàng rào an toàn.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Ví dụ Token F1</strong> (code ở <code>chapter05/metrics.py</code>):</p>
+      <pre><code>đáp án mẫu : "check cable and restart router"     <span class="cm"># 5 từ</span>
+model trả lời: "restart router then check cable"   <span class="cm"># 5 từ</span>
+từ trùng     : restart, router, check, cable       <span class="cm"># 4 từ</span>
+
+precision = 4/5 = 0.8   <span class="cm"># bao nhiêu từ model nói là có trong đáp án</span>
+recall    = 4/5 = 0.8   <span class="cm"># bao nhiêu từ của đáp án được model nói ra</span>
+F1 = 2 · P · R / (P + R) = 0.8</code></pre>
+    </div></li>
+    <li><div>
+      <h3>Ba lăng kính (eval_3lens.py)</h3>
+      <p>Token F1 có điểm yếu: hai câu trả lời đúng có thể dùng từ khác nhau hoàn toàn. Vì vậy sách đo thêm hai góc nhìn: <strong>tuân thủ định dạng</strong> (câu trả lời có dòng Summary và các Steps đánh số không, kiểm tra bằng regex) và <strong>LLM làm giám khảo</strong> (một model mạnh chấm 1–5 điểm về độ đúng, tính hành động được, định dạng).</p>
+      <p>Kết quả thật trong <code>data/it_support_fmt/eval_3lens.json</code>, chấm trên tập valid:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Lăng kính</th><th>Model gốc</th><th>LoRA (chương 5)</th><th>Full SFT (chương 6)</th></tr></thead>
+          <tbody>
+            <tr><td>Token F1</td><td class="n">0,143</td><td class="n">0,152</td><td class="n">0,147</td></tr>
+            <tr><td>Tuân thủ định dạng</td><td class="n">0%</td><td class="n">100%</td><td class="n">100%</td></tr>
+            <tr><td>Giám khảo: độ đúng (1–5)</td><td class="n">2,04</td><td class="n">1,82</td><td class="n">1,89</td></tr>
+            <tr><td>Giám khảo: hành động được (1–5)</td><td class="n">1,89</td><td class="n">2,02</td><td class="n">1,96</td></tr>
+            <tr><td>Giám khảo: định dạng (1–5)</td><td class="n">3,52</td><td class="n">4,00</td><td class="n">3,87</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div></li>
+  </ol>
+  <h3>Đọc bảng trên như thế nào</h3>
+  <ul>
+    <li><strong>Phong cách thay đổi rõ rệt:</strong> định dạng từ 0% lên 100%. LoRA học rất tốt <em>cách trình bày</em> từ dữ liệu.</li>
+    <li><strong>Kiến thức gần như không đổi:</strong> Token F1 chỉ nhích 0,01, điểm độ đúng thậm chí giảm nhẹ. Fine-tune trên vài trăm ví dụ không dạy model thêm kiến thức IT mới. Đây cũng là bài học của sidebar chương 1: model nói tự tin hơn chưa chắc đã đúng hơn.</li>
+    <li><strong>Một chỉ số không đủ:</strong> chỉ nhìn Token F1 thì kết luận "không có gì thay đổi". Chỉ nhìn định dạng thì kết luận "tốt lên hoàn toàn". Cả hai đều sai. Cần nhiều lăng kính.</li>
+  </ul>
+  <div class="note"><p>Ba điều cần nhớ khi tự đánh giá: (1) chỉ báo cáo điểm trên <strong>test</strong>, đừng dùng test để chọn cấu hình; (2) test chỉ có 50 câu nên mỗi câu đã là 2%, chênh lệch 0,01 Token F1 có thể chỉ là nhiễu; (3) so sánh các model với cùng prompt, cùng system prompt, cùng cách sinh (greedy) thì kết quả mới công bằng.</p></div>
+</section>
+
+<section id="ket-qua">
+  <p class="num">12</p>
+  <h2>Dùng adapter sau khi train</h2>
+  <p>Thư mục <code>chapter02/runs/ch2_quickstart/</code> chứa <code>adapter_model.safetensors</code>, <code>adapter_config.json</code>, các file tokenizer và <code>manifest.json</code>. Có ba cách dùng adapter:</p>
+  <h3>Nạp adapter lên model gốc</h3>
+  <pre><code>from transformers import AutoModelForCausalLM
+from peft import PeftModel
+
+base = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-4B-Instruct-2507", dtype="bfloat16", device_map="auto")
+model = PeftModel.from_pretrained(base, "chapter02/runs/ch2_quickstart")</code></pre>
+  <h3>Gộp vĩnh viễn vào model</h3>
+  <pre><code>merged = model.merge_and_unload()   <span class="cm"># W_mới = W + (α/r)·B·A</span></code></pre>
+  <p>Sau khi gộp, model chạy nhanh như model gốc (không còn nhánh phụ) nhưng không tắt được adapter nữa. Script <code>chapter05/generate.py --merge_adapter</code> làm việc này.</p>
+  <h3>Nhiều adapter cho một model</h3>
+  <p>Vì model gốc không đổi, một server có thể giữ <strong>một</strong> bản Qwen3-4B (8 GB) và nhiều adapter 130 MB (IT, HR, pháp lý...), đổi qua lại tuỳ yêu cầu. Xem <code>chapter05/multi_lora_demo.py</code>.</p>
+</section>
+
+<section id="thu-nghiem">
+  <p class="num">13</p>
+  <h2>Thử nghiệm tiếp trên Colab</h2>
+  <p>Sửa hằng số ở đầu <code>quickstart.py</code> (dòng 50–70) rồi chạy lại ô quickstart để tự thấy tác động:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Thay đổi</th><th>Điều sẽ thấy</th></tr></thead>
+      <tbody>
+        <tr><td><code>LORA_R = 4</code>, <code>LORA_ALPHA = 8</code></td><td>Adapter còn ~33 MB, train nhanh hơn chút. Với 40 ví dụ, chất lượng khó thấy khác biệt.</td></tr>
+        <tr><td><code>TARGET_MODULES = ["q_proj", "v_proj"]</code></td><td>Chỉ ~5,9 triệu tham số (như bài báo LoRA gốc). Câu trả lời AFTER thường ít đổi phong cách hơn.</td></tr>
+        <tr><td><code>MAX_STEPS = 60</code></td><td>~12 epoch trên 40 ví dụ. Train loss giảm sâu, eval loss có thể tăng lại: dấu hiệu overfitting.</td></tr>
+        <tr><td><code>TRAIN_SIZE = 200</code>, <code>MAX_STEPS = 50</code></td><td>Nhiều dữ liệu hơn, AFTER theo định dạng <code>Summary/Steps</code> rõ hơn. Mất ~3 lần thời gian.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Trên Colab, sửa file bằng cách mở thanh <strong>Files</strong> bên trái, vào <code>/content/ModelAdaptationBook/code/chapter02/quickstart.py</code> rồi nhấp đúp để chỉnh. Hoặc dùng một ô code:</p>
+  <pre><code>!sed -i 's/^MAX_STEPS = 20/MAX_STEPS = 60/' chapter02/quickstart.py</code></pre>
+</section>
+
+<section id="thuat-ngu">
+  <p class="num">14</p>
+  <h2>Thuật ngữ</h2>
+  <dl class="gloss">
+    <dt>Adapter</dt><dd>Bộ trọng số nhỏ (A, B) gắn thêm vào model gốc. Là sản phẩm của việc train LoRA.</dd>
+    <dt>Rank (r)</dt><dd>Số chiều trung gian của ma trận nén. Quyết định adapter "rộng" đến đâu.</dd>
+    <dt>Frozen / đóng băng</dt><dd>Trọng số chỉ dùng để tính, không được cập nhật khi train.</dd>
+    <dt>PEFT</dt><dd>Parameter-Efficient Fine-Tuning: họ kỹ thuật chỉ train một phần nhỏ tham số. LoRA là kỹ thuật phổ biến nhất. Cũng là tên thư viện Hugging Face cung cấp <code>LoraConfig</code>.</dd>
+    <dt>SFT</dt><dd>Supervised Fine-Tuning: train trên cặp câu hỏi và câu trả lời mẫu. <code>SFTTrainer</code> của TRL làm việc này.</dd>
+    <dt>Loss</dt><dd>Độ sai khi model đoán token tiếp theo của câu trả lời mẫu. Càng thấp càng khớp dữ liệu.</dd>
+    <dt>Epoch</dt><dd>Một lượt đi qua toàn bộ dữ liệu train.</dd>
+    <dt>Train / valid / test</dt><dd>Ba phần tách rời của dữ liệu: để học, để theo dõi và chọn cấu hình, để báo cáo kết quả cuối.</dd>
+    <dt>Overfitting</dt><dd>Model học thuộc lòng dữ liệu train: loss train giảm nhưng kết quả trên dữ liệu mới xấu đi.</dd>
+    <dt>Token F1</dt><dd>Điểm trùng từ giữa câu trả lời và đáp án mẫu, từ 0 đến 1.</dd>
+    <dt>LLM-as-judge</dt><dd>Dùng một model mạnh chấm điểm câu trả lời theo tiêu chí cho trước.</dd>
+    <dt>bf16</dt><dd>bfloat16: số thực 2 byte, đủ chính xác cho deep learning, nhẹ gấp đôi fp32. Cần GPU Ampere trở lên (A100, L4, A30).</dd>
+    <dt>QLoRA</dt><dd>LoRA trên model gốc đã nén 4-bit. Nhẹ hơn nữa, học ở chương 5.</dd>
+  </dl>
+</section>
+</main>
+</div>
+
+<script>
+(function () {
+  var LAYERS = 36, TOTAL = 4.02e9;
+  var MODS = [
+    ["q_proj", 2560, 4096], ["k_proj", 2560, 1024], ["v_proj", 2560, 1024], ["o_proj", 4096, 2560],
+    ["gate_proj", 2560, 9728], ["up_proj", 2560, 9728], ["down_proj", 9728, 2560]
+  ];
+  var box = document.getElementById("mods");
+  MODS.forEach(function (m) {
+    var label = document.createElement("label");
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = true; cb.id = "m-" + m[0]; cb.dataset.i = m[1] + m[2];
+    label.appendChild(cb); label.appendChild(document.createTextNode(m[0]));
+    box.appendChild(label);
+  });
+  var r = document.getElementById("r");
+  var fmt = function (n) { return n.toLocaleString("vi-VN"); };
+  function update() {
+    var rv = +r.value, perLayer = 0;
+    document.getElementById("rval").textContent = rv;
+    box.querySelectorAll("input").forEach(function (cb) { if (cb.checked) perLayer += rv * (+cb.dataset.i); });
+    var p = perLayer * LAYERS, pct = p / TOTAL * 100;
+    document.getElementById("sParams").textContent = fmt(p);
+    document.getElementById("sPct").textContent = pct.toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + "%";
+    document.getElementById("sMb").textContent = (p * 4 / 1e6).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) + " MB";
+    document.getElementById("sBar").style.width = Math.min(100, pct * 10) + "%";
+  }
+  r.addEventListener("input", update);
+  box.addEventListener("change", update);
+  update();
+})();
+</script>
+</body>
+</html>
