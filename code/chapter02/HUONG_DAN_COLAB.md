@@ -76,6 +76,8 @@ Log `Step 1..5`, loss giảm trong 20 bước, peak GPU ~9 GB. Adapter (~130 MB)
 | pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
-Muốn hiểu LoRA, cách tổ chức dữ liệu train/valid/test và cách đánh giá: mở [`LORA_GIAI_THICH.html`](LORA_GIAI_THICH.html) bằng trình duyệt (tải file về rồi nhấp đúp).
+## Hiểu kiến thức của chương
+
+Mở [`LORA_GIAI_THICH.html`](LORA_GIAI_THICH.html) bằng trình duyệt (tải file về rồi nhấp đúp) để đọc phần giải thích trực quan: ý tưởng, sơ đồ, giải thích code và cách đọc kết quả của chương.
 
 Tài liệu gốc của chương: [README.md](README.md).

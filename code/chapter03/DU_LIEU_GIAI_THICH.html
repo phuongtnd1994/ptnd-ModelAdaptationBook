@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dữ Liệu Cho Fine-Tuning</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sổ tay kỹ thuật — mục lục dính bên trái, nội dung một cột; xanh = trọng số đóng băng, cam = phần LoRA được train */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #56636f;
+  --line: #d9dfe5;
+  --frozen: #3d6d9e;
+  --frozen-soft: #dbe6f1;
+  --train: #d2691e;
+  --train-soft: #fbe5d3;
+  --code-bg: #eef1f4;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+    --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+  --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.7 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.shell { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding-block: 40px 80px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; }
+nav.toc p { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a { display: flex; gap: 8px; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); background: var(--surface); outline: none; }
+main { min-width: 0; }
+header.hero { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--train); font-weight: 600; margin: 0 0 8px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 48px); line-height: 1.15; margin: 0 0 16px; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1.25; margin: 0 0 16px; text-wrap: balance; }
+h3 { font-size: 18px; margin: 24px 0 8px; }
+p, li { max-width: 68ch; }
+.lede { font-size: 19px; color: var(--muted); margin: 0; }
+section { padding-block: 48px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+.num { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.src { font-size: 12px; color: var(--muted); margin: -8px 0 16px; font-family: var(--font-mono); }
+.hl-t { color: var(--train); font-weight: 600; }
+.hl-f { color: var(--frozen); font-weight: 600; }
+.cm { color: var(--muted); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.tag.f { background: var(--frozen-soft); color: var(--frozen); }
+.tag.t { background: var(--train-soft); color: var(--train); }
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; overflow-x: auto; }
+.figure svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.figure figcaption, .caption { font-size: 14px; color: var(--muted); margin-top: 12px; }
+svg text { fill: var(--ink); font-family: var(--font-body); }
+svg .muted { fill: var(--muted); }
+svg .f { fill: var(--frozen-soft); stroke: var(--frozen); stroke-width: 1.5; }
+svg .t { fill: var(--train-soft); stroke: var(--train); stroke-width: 1.5; }
+svg .v { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+svg .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+svg .ft { fill: var(--frozen); font-weight: 600; }
+svg .tt { fill: var(--train); font-weight: 600; }
+.formula { font-family: var(--font-mono); font-size: 18px; text-align: center; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin: 20px 0; overflow-x: auto; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 20px 0; }
+.cols > div { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+.cols h3 { margin-top: 0; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; display: grid; gap: 20px; }
+.calc label { font-weight: 600; }
+.calc input[type=range] { width: 100%; accent-color: var(--train); }
+.mods { display: flex; flex-wrap: wrap; gap: 8px; }
+.mods label { font-weight: 500; font-family: var(--font-mono); font-size: 13px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.mods input { accent-color: var(--train); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { border-left: 3px solid var(--train); padding: 4px 12px; }
+.stat b { display: block; font-family: var(--font-mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.bar { height: 14px; background: var(--frozen-soft); border-radius: 7px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--train); min-width: 2px; }
+.steps { display: grid; gap: 0; counter-reset: s; margin: 16px 0; padding: 0; list-style: none; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); max-width: none; }
+.steps > li::before { content: counter(s); font-family: var(--font-mono); font-weight: 600; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-size: 14px; }
+.steps h3 { margin: 4px 0 4px; }
+.note { border-left: 3px solid var(--frozen); background: var(--surface); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+.note p { margin: 0; }
+dl.gloss { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 10px 20px; }
+dl.gloss dt { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
+dl.gloss dd { margin: 0; }
+@media (max-width: 820px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; }
+  nav.toc { position: static; }
+  nav.toc ol { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.gloss dd { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+.series { margin-top: 48px; font-size: 14px; color: var(--muted); }
+.series ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.series a { display: inline-block; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); text-decoration: none; }
+.series a[aria-current] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.out { white-space: pre-wrap; font-family: var(--font-mono); font-size: 13px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 8px 0 0; max-height: 320px; overflow: auto; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.ok { background: #dcefe2; color: #1f6b3a; }
+.warn { background: #f7ecd0; color: #7a5a06; }
+.bad { background: #f6dcdc; color: #8f2424; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ok { background: #1d3a27; color: #8fd3a6; } :root:not([data-theme="light"]) .warn { background: #3d3315; color: #e8c766; } :root:not([data-theme="light"]) .bad { background: #432020; color: #f0a0a0; } }
+:root[data-theme="dark"] .ok { background: #1d3a27; color: #8fd3a6; } :root[data-theme="dark"] .warn { background: #3d3315; color: #e8c766; } :root[data-theme="dark"] .bad { background: #432020; color: #f0a0a0; }
+.calc output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.calc .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.calc input[type=number] { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.rank { display: flex; flex-wrap: wrap; gap: 8px; }
+.rank button { font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.rank button[aria-pressed="true"] { background: var(--train-soft); border-color: var(--train); color: var(--train); font-weight: 600; }
+.rank button:focus-visible, .calc input:focus-visible { outline: 2px solid var(--frozen); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="toc" aria-label="Mục lục">
+  <p>Mục lục</p>
+  <ol>
+    <li><a href="#tai-sao">Vì sao dữ liệu số một</a></li>
+    <li><a href="#thi-nghiem">Thí nghiệm 4 điều kiện</a></li>
+    <li><a href="#ket-qua">Kết quả và cách đọc</a></li>
+    <li><a href="#dinh-dang">Định dạng dữ liệu</a></li>
+    <li><a href="#pipeline">Pipeline dữ liệu tổng hợp</a></li>
+    <li><a href="#giam-khao">Quality gate chi tiết</a></li>
+    <li><a href="#phan-phoi">Kiểm tra phân phối</a></li>
+    <li><a href="#manifest">DatasetManifest</a></li>
+  </ol>
+</nav>
+<main>
+<header class="hero">
+  <p class="eyebrow">Chương 3 · code/chapter03/</p>
+  <h1>Dữ liệu quyết định model tốt đến đâu</h1>
+  <p class="lede">Chương 3 chứng minh bằng thí nghiệm rằng chất lượng nhãn quan trọng hơn mọi siêu tham số, rồi xây một pipeline sinh dữ liệu tổng hợp 6 bước có kiểm soát chất lượng, và quản lý dữ liệu bằng manifest.</p>
+</header>
+<section id="tai-sao">
+  <p class="num">01</p>
+<h2>Model chỉ giỏi bằng dữ liệu nó học</h2>
+  <p>Fine-tune là ép model bắt chước dữ liệu. Nếu dữ liệu có nhãn sai, mâu thuẫn hay lệch chủ đề, model bắt chước luôn những lỗi đó. Thí nghiệm của chương giữ <strong>mọi thứ cố định</strong> (model, số ví dụ, siêu tham số) và chỉ thay đổi <strong>chất lượng nhãn</strong>, để thấy riêng tác động của dữ liệu.</p>
+</section>
+<section id="thi-nghiem">
+  <p class="num">02</p>
+<h2>Thí nghiệm: bốn mức chất lượng, cùng 150 ví dụ</h2>
+  <p>Bài toán: phân loại cảm xúc câu tin tài chính thành <code>positive</code>, <code>negative</code> hoặc <code>neutral</code>. Dữ liệu <strong>Financial PhraseBank</strong>: mỗi câu được 16 người gán nhãn, nên có sẵn các mức đồng thuận khác nhau.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Điều kiện</th><th>Nguồn</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td>A · AllAgree</td><td>Cả 16 người đồng ý</td><td>Dữ liệu vàng</td></tr>
+      <tr><td>B · 75Agree</td><td>≥ 12/16 người đồng ý</td><td>Chất lượng production thường gặp</td></tr>
+      <tr><td>C · 50Agree</td><td>Chỉ quá bán đồng ý</td><td>Nhiễu tự nhiên, kiểu crowdsourcing</td></tr>
+      <tr><td>D · Corrupted</td><td>AllAgree nhưng <strong>lật 20% nhãn</strong></td><td>Lỗi hệ thống, nhãn mâu thuẫn</td></tr>
+    </tbody>
+  </table></div>
+  <pre><code>TRAIN_N    = 150    <span class="cm"># ví dụ train mỗi điều kiện, giống nhau</span>
+TEST_N     = 100    <span class="cm"># test chung, lấy từ AllAgree, không đổi</span>
+NOISE_RATE = 0.20   <span class="cm"># tỉ lệ lật nhãn ở điều kiện D</span>
+
+LORA_R = 8; LORA_ALPHA = 8; LEARNING_RATE = 3e-4; MAX_TRAIN_STEPS = 150</code></pre>
+  <p class="src">ch03_data_quality_explore.py dòng 33–37 · ch03_data_quality_helpers.py dòng 36–46</p>
+  <p>Cả bốn điều kiện được chấm trên <strong>cùng 100 câu test</strong> lấy từ AllAgree. Test cố định là điều kiện để so sánh công bằng.</p>
+</section>
+<section id="ket-qua">
+  <p class="num">03</p>
+<h2>Kết quả: nhiễu tự nhiên không sao, lỗi hệ thống thì có</h2>
+  <figure class="figure">
+    <svg viewBox="0 0 560 250" width="560" role="img" aria-label="Biểu đồ accuracy bốn điều kiện: A 0.96, B 0.98, C 0.96, D 0.84">
+      <line x1="60" y1="210" x2="540" y2="210" class="arrow"/>
+      <text x="50" y="214" font-size="11" text-anchor="end" class="muted">0,80</text>
+      <text x="50" y="114" font-size="11" text-anchor="end" class="muted">0,90</text>
+      <text x="50" y="24" font-size="11" text-anchor="end" class="muted">1,00</text>
+      <line x1="60" y1="110" x2="540" y2="110" stroke="var(--line)"/>
+      <line x1="60" y1="20" x2="540" y2="20" stroke="var(--line)"/>
+      <rect x="90" y="56" width="70" height="154" class="f"/><text x="125" y="48" text-anchor="middle" font-size="13" font-weight="600">0,96</text><text x="125" y="232" text-anchor="middle" font-size="12">A AllAgree</text>
+      <rect x="205" y="38" width="70" height="172" class="f"/><text x="240" y="30" text-anchor="middle" font-size="13" font-weight="600">0,98</text><text x="240" y="232" text-anchor="middle" font-size="12">B 75Agree</text>
+      <rect x="320" y="56" width="70" height="154" class="f"/><text x="355" y="48" text-anchor="middle" font-size="13" font-weight="600">0,96</text><text x="355" y="232" text-anchor="middle" font-size="12">C 50Agree</text>
+      <rect x="435" y="164" width="70" height="46" class="t"/><text x="470" y="156" text-anchor="middle" font-size="13" font-weight="600" class="tt">0,84</text><text x="470" y="232" text-anchor="middle" font-size="12">D Corrupted</text>
+    </svg>
+    <figcaption>Accuracy trên 100 câu test (README chương 3, seed 42). Trục tung bắt đầu từ 0,80 để thấy rõ chênh lệch.</figcaption>
+  </figure>
+  <ul>
+    <li><strong>A, B, C gần như bằng nhau</strong> (0,96–0,98). Khi người gán nhãn bất đồng tự nhiên, những câu đó vốn mơ hồ, và model vẫn học được xu hướng chung.</li>
+    <li><strong>D tụt hẳn xuống 0,84</strong> dù câu chữ là dữ liệu vàng. Nhãn bị lật tạo ra ví dụ <em>mâu thuẫn</em>: cùng kiểu câu khi thì positive khi thì negative. Model không thể học được quy luật từ mâu thuẫn.</li>
+    <li>Bài học: kiểm tra dữ liệu để tìm <strong>lỗi có hệ thống</strong> (nhãn sai do bug script, do người gán hiểu sai hướng dẫn) quan trọng hơn chạy theo độ đồng thuận tuyệt đối.</li>
+  </ul>
+  <p>Script còn ước lượng <strong>Cohen's kappa</strong> cho mỗi điều kiện: chỉ số đo mức đồng thuận giữa hai người gán nhãn sau khi trừ phần trùng do ngẫu nhiên (1 = hoàn toàn đồng ý, 0 = như đoán bừa).</p>
+</section>
+<section id="dinh-dang">
+  <p class="num">04</p>
+<h2>Định dạng dữ liệu cho fine-tune</h2>
+  <p>Chương liệt kê các định dạng phổ biến. Cả sách dùng dạng <strong>chat messages</strong> (tương đương ChatML), vì <code>SFTTrainer</code> tự áp chat template của model:</p>
+  <pre><code>{"messages": [
+  {"role": "system", "content": "You are a financial analyst. Classify the sentiment ..."},
+  {"role": "user", "content": "Operating profit rose to EUR 13.1 mn from EUR 8.7 mn"},
+  {"role": "assistant", "content": "positive"}
+]}</code></pre>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Định dạng</th><th>Đặc điểm</th></tr></thead>
+    <tbody>
+      <tr><td>ChatML / messages</td><td>Danh sách lượt nói có <code>role</code>. Hỗ trợ system prompt và nhiều lượt.</td></tr>
+      <tr><td>Alpaca</td><td><code>instruction</code>, <code>input</code>, <code>output</code>. Đơn giản, một lượt.</td></tr>
+      <tr><td>ShareGPT</td><td><code>conversations</code> với <code>from: human/gpt</code>. Hay dùng cho hội thoại nhiều lượt.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="pipeline">
+  <p class="num">05</p>
+<h2>Sinh dữ liệu tổng hợp bằng model teacher: 6 bước</h2>
+  <p>Khi dữ liệu thật quá ít, có thể nhờ một model mạnh (teacher, ở đây là Claude) viết thêm ví dụ. Nguy hiểm là dữ liệu tổng hợp dễ đơn điệu, sai hoặc lệch phong cách. Pipeline trong <code>ch03_synthetic_data_generation.py</code> kiểm soát từng bước:</p>
+  <ol class="steps">
+    <li><div><h3>Load seeds</h3><p><code>load_seeds(n_per_category=20)</code>: lấy 20 câu thật mỗi nhãn từ Financial PhraseBank, cân bằng giữa các nhãn.</p></div></li>
+    <li><div><h3>Build prompt có neo phong cách</h3><p>Prompt chứa 2–3 câu thật làm "mẫu phong cách" và chỉ định rõ nhãn cần sinh. Không chỉ định nhãn thì teacher sinh toàn câu neutral.</p></div></li>
+    <li><div><h3>Generate</h3><p>Gọi teacher sinh <code>N_PER_CAT = 15</code> câu mỗi nhãn, trả về JSON và được parse cẩn thận.</p></div></li>
+    <li><div><h3>Quality gate</h3><p>Một lời gọi riêng (Claude làm giám khảo) chấm từng câu theo 3 tiêu chí, thang 1–5. Chỉ giữ câu có <strong>cả ba ≥ 4</strong>.</p></div></li>
+    <li><div><h3>Distribution check</h3><p>So "trọng tâm" embedding của dữ liệu tổng hợp với dữ liệu thật.</p></div></li>
+    <li><div><h3>Mix và save</h3><p>Trộn với dữ liệu thật, giới hạn tổng hợp tối đa <strong>30%</strong> tập train, lưu kèm manifest.</p></div></li>
+  </ol>
+</section>
+<section id="giam-khao">
+  <p class="num">06</p>
+<h2>Giám khảo chấm theo rubric rõ ràng</h2>
+  <pre><code>FIDELITY (1–5): nhãn có khớp nội dung câu không?
+FORMAT (1–5): có giống tin tài chính thật không?
+DOMAIN SAFETY (1–5): con số tài chính (%, lãi suất, số tiền) có hợp lý không?
+
+A PASS requires ALL THREE >= 4.</code></pre>
+  <p class="src">ch03_synthetic_data_generation.py, JUDGE_SYSTEM_PROMPT (dòng 347–366)</p>
+  <ul>
+    <li>Giám khảo được gọi <strong>tách riêng</strong> khỏi lời gọi sinh dữ liệu, để không bị ảnh hưởng bởi ngữ cảnh lúc sinh.</li>
+    <li>Script in ra tiêu chí nào làm rớt nhiều câu nhất, để biết cần sửa prompt sinh ở điểm nào.</li>
+    <li>Yêu cầu trả về JSON giúp chấm tự động hàng nghìn câu.</li>
+  </ul>
+</section>
+<section id="phan-phoi">
+  <p class="num">07</p>
+<h2>Kiểm tra phân phối: dữ liệu tổng hợp có "giống" dữ liệu thật?</h2>
+  <p>Dữ liệu do model sinh ra thường tập trung trong một vùng hẹp: câu na ná nhau, từ vựng an toàn. Nếu trộn quá nhiều, model học theo sự đơn điệu đó (hiện tượng <em>model collapse</em>).</p>
+  <p>Cách đo trong code: biến mỗi câu thành vector bằng model embedding nhỏ <code>all-MiniLM-L6-v2</code>, lấy trung bình (trọng tâm) của nhóm thật và nhóm tổng hợp, rồi tính cosine giữa hai trọng tâm.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Cosine trọng tâm</th><th>Kết luận</th></tr></thead>
+    <tbody>
+      <tr><td class="n">≥ 0,85</td><td><span class="pill ok">an toàn để trộn</span></td></tr>
+      <tr><td class="n">0,70 – 0,85</td><td><span class="pill warn">thận trọng, giảm tỉ lệ tổng hợp</span></td></tr>
+      <tr><td class="n">&lt; 0,70</td><td><span class="pill bad">sửa prompt sinh trước khi trộn</span></td></tr>
+    </tbody>
+  </table></div>
+  <h3>Tính nhanh giới hạn 30%</h3>
+  <div class="calc">
+    <div class="row">
+      <div><label for="nreal">Số câu thật trong train</label><input type="number" id="nreal" value="150" min="1" step="1"></div>
+      <div><label for="ratio">Tỉ lệ tổng hợp tối đa (%)</label><input type="number" id="ratio" value="30" min="1" max="90" step="1"></div>
+    </div>
+    <p>Được trộn tối đa <output id="nsyn">64</output> câu tổng hợp, tổng tập train <output id="ntot">214</output> câu.</p>
+  </div>
+  <p class="caption">Công thức trong <code>mix_and_save()</code>: <code>n_synth_max = n_real × r / (1 − r)</code>.</p>
+</section>
+<section id="manifest">
+  <p class="num">08</p>
+<h2>Manifest: giấy khai sinh của bộ dữ liệu</h2>
+  <p>Sau khi model chạy thật, sẽ có lúc cần trả lời: "Model này học từ dữ liệu nào? Dữ liệu đó còn được phép dùng không?". <code>ch03_datasetmanifest.py</code> lưu kèm mỗi bộ dữ liệu một file JSON:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Trường</th><th>Để làm gì</th></tr></thead>
+    <tbody>
+      <tr><td><code>sha256</code></td><td>Mã băm nội dung. Sửa một ký tự là mã đổi, nên biết chắc model học đúng phiên bản nào.</td></tr>
+      <tr><td><code>sources</code></td><td>Nguồn gốc và giấy phép của từng phần dữ liệu.</td></tr>
+      <tr><td><code>annotation_kappa</code>, <code>quality_pass_rate</code>, <code>centroid_sim</code></td><td>Các chỉ số chất lượng ở trên, ghi lại để so giữa các phiên bản.</td></tr>
+      <tr><td><code>synthetic_ratio</code></td><td>Tỉ lệ dữ liệu tổng hợp.</td></tr>
+      <tr><td><code>pii_scrubbed</code></td><td>Đã xoá thông tin cá nhân chưa.</td></tr>
+      <tr><td>Lineage</td><td>Chuỗi dữ liệu v1 → model checkpoint → điểm đánh giá → dữ liệu v2...</td></tr>
+    </tbody>
+  </table></div>
+  <p>Module còn có <code>diff_manifests()</code> để so hai phiên bản, và <code>check_retention_status()</code> để biết khi nào phải xoá dữ liệu theo quy định kiểu GDPR. Bộ IT-support của sách cũng có <code>data/it_support/manifest.json</code> theo đúng tinh thần này.</p>
+</section>
+<nav class="series" aria-label="Các chương">
+  <p>Cả bộ giải thích</p>
+  <ul>
+      <li><a href="../chapter01/TONG_QUAN_GIAI_THICH.html">Chương 1 · Vì sao cần adaptation</a></li>
+      <li><a href="../chapter02/LORA_GIAI_THICH.html">Chương 2 · LoRA quickstart</a></li>
+      <li><a href="../chapter03/DU_LIEU_GIAI_THICH.html" aria-current="page">Chương 3 · Dữ liệu</a></li>
+      <li><a href="../chapter04/PROMPT_RAG_GIAI_THICH.html">Chương 4 · Few-shot và RAG</a></li>
+      <li><a href="../chapter05/QLORA_GIAI_THICH.html">Chương 5 · LoRA và QLoRA</a></li>
+      <li><a href="../chapter06/SFT_GIAI_THICH.html">Chương 6 · Full SFT</a></li>
+      <li><a href="../chapter07/DISTILLATION_GIAI_THICH.html">Chương 7 · Distillation</a></li>
+      <li><a href="../chapter08/DPO_GIAI_THICH.html">Chương 8 · DPO</a></li>
+      <li><a href="../chapter09/VAN_HANH_GIAI_THICH.html">Chương 9 · Vận hành</a></li>
+  </ul>
+</nav>
+</main>
+</div>
+<script>
+(function () {
+  var a = document.getElementById("nreal"), b = document.getElementById("ratio");
+  function u() {
+    var n = Math.max(0, +a.value || 0), r = Math.min(0.9, Math.max(0.01, (+b.value || 0) / 100));
+    var s = Math.floor(n * r / (1 - r));
+    document.getElementById("nsyn").textContent = s;
+    document.getElementById("ntot").textContent = n + s;
+  }
+  a.addEventListener("input", u); b.addEventListener("input", u); u();
+})();
+</script>
+</body>
+</html>

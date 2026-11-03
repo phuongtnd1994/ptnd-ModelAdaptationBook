@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vì Sao Cần Model Adaptation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sổ tay kỹ thuật — mục lục dính bên trái, nội dung một cột; xanh = trọng số đóng băng, cam = phần LoRA được train */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #56636f;
+  --line: #d9dfe5;
+  --frozen: #3d6d9e;
+  --frozen-soft: #dbe6f1;
+  --train: #d2691e;
+  --train-soft: #fbe5d3;
+  --code-bg: #eef1f4;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+    --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171d; --surface: #1a2129; --ink: #e5eaef; --muted: #9aa7b3; --line: #2c3640;
+  --frozen: #7fa8d6; --frozen-soft: #22344a; --train: #f0954e; --train-soft: #4a2e19; --code-bg: #0f1418;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.7 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.shell { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding-block: 40px 80px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; }
+nav.toc p { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a { display: flex; gap: 8px; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); background: var(--surface); outline: none; }
+main { min-width: 0; }
+header.hero { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--train); font-weight: 600; margin: 0 0 8px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 48px); line-height: 1.15; margin: 0 0 16px; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1.25; margin: 0 0 16px; text-wrap: balance; }
+h3 { font-size: 18px; margin: 24px 0 8px; }
+p, li { max-width: 68ch; }
+.lede { font-size: 19px; color: var(--muted); margin: 0; }
+section { padding-block: 48px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+.num { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.src { font-size: 12px; color: var(--muted); margin: -8px 0 16px; font-family: var(--font-mono); }
+.hl-t { color: var(--train); font-weight: 600; }
+.hl-f { color: var(--frozen); font-weight: 600; }
+.cm { color: var(--muted); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.tag.f { background: var(--frozen-soft); color: var(--frozen); }
+.tag.t { background: var(--train-soft); color: var(--train); }
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; overflow-x: auto; }
+.figure svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.figure figcaption, .caption { font-size: 14px; color: var(--muted); margin-top: 12px; }
+svg text { fill: var(--ink); font-family: var(--font-body); }
+svg .muted { fill: var(--muted); }
+svg .f { fill: var(--frozen-soft); stroke: var(--frozen); stroke-width: 1.5; }
+svg .t { fill: var(--train-soft); stroke: var(--train); stroke-width: 1.5; }
+svg .v { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+svg .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+svg .ft { fill: var(--frozen); font-weight: 600; }
+svg .tt { fill: var(--train); font-weight: 600; }
+.formula { font-family: var(--font-mono); font-size: 18px; text-align: center; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin: 20px 0; overflow-x: auto; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 20px 0; }
+.cols > div { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+.cols h3 { margin-top: 0; }
+.tablewrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin: 24px 0; display: grid; gap: 20px; }
+.calc label { font-weight: 600; }
+.calc input[type=range] { width: 100%; accent-color: var(--train); }
+.mods { display: flex; flex-wrap: wrap; gap: 8px; }
+.mods label { font-weight: 500; font-family: var(--font-mono); font-size: 13px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.mods input { accent-color: var(--train); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { border-left: 3px solid var(--train); padding: 4px 12px; }
+.stat b { display: block; font-family: var(--font-mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.bar { height: 14px; background: var(--frozen-soft); border-radius: 7px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--train); min-width: 2px; }
+.steps { display: grid; gap: 0; counter-reset: s; margin: 16px 0; padding: 0; list-style: none; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); max-width: none; }
+.steps > li::before { content: counter(s); font-family: var(--font-mono); font-weight: 600; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-size: 14px; }
+.steps h3 { margin: 4px 0 4px; }
+.note { border-left: 3px solid var(--frozen); background: var(--surface); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+.note p { margin: 0; }
+dl.gloss { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 10px 20px; }
+dl.gloss dt { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
+dl.gloss dd { margin: 0; }
+@media (max-width: 820px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; }
+  nav.toc { position: static; }
+  nav.toc ol { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.gloss dd { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+.series { margin-top: 48px; font-size: 14px; color: var(--muted); }
+.series ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.series a { display: inline-block; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); text-decoration: none; }
+.series a[aria-current] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.out { white-space: pre-wrap; font-family: var(--font-mono); font-size: 13px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 8px 0 0; max-height: 320px; overflow: auto; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.ok { background: #dcefe2; color: #1f6b3a; }
+.warn { background: #f7ecd0; color: #7a5a06; }
+.bad { background: #f6dcdc; color: #8f2424; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ok { background: #1d3a27; color: #8fd3a6; } :root:not([data-theme="light"]) .warn { background: #3d3315; color: #e8c766; } :root:not([data-theme="light"]) .bad { background: #432020; color: #f0a0a0; } }
+:root[data-theme="dark"] .ok { background: #1d3a27; color: #8fd3a6; } :root[data-theme="dark"] .warn { background: #3d3315; color: #e8c766; } :root[data-theme="dark"] .bad { background: #432020; color: #f0a0a0; }
+.calc output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.calc .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.calc input[type=number] { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.rank { display: flex; flex-wrap: wrap; gap: 8px; }
+.rank button { font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.rank button[aria-pressed="true"] { background: var(--train-soft); border-color: var(--train); color: var(--train); font-weight: 600; }
+.rank button:focus-visible, .calc input:focus-visible { outline: 2px solid var(--frozen); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="toc" aria-label="Mục lục">
+  <p>Mục lục</p>
+  <ol>
+    <li><a href="#van-de">Bài toán của doanh nghiệp</a></li>
+    <li><a href="#phuong-phap">Phổ các kỹ thuật</a></li>
+    <li><a href="#hai-truc">Hai trục: input và model</a></li>
+    <li><a href="#quyet-dinh">Khung ra quyết định</a></li>
+    <li><a href="#thi-nghiem">Thí nghiệm trong code</a></li>
+    <li><a href="#ket-qua">Đọc ba câu trả lời</a></li>
+    <li><a href="#bai-hoc">Bài học rút ra</a></li>
+    <li><a href="#chay">Chạy trên Colab</a></li>
+  </ol>
+</nav>
+<main>
+<header class="hero">
+  <p class="eyebrow">Chương 1 · code/chapter01/run_sidebar_example.py</p>
+  <h1>Vì sao không dùng luôn model có sẵn?</h1>
+  <p class="lede">Chương 1 trả lời câu hỏi nền tảng của cả cuốn sách: khi nào nên điều chỉnh (adapt) một LLM cho việc của mình, có những cách nào, và mỗi cách đổi lấy cái gì. Trang này đi qua bản đồ đó rồi mổ xẻ thí nghiệm nhỏ trong code chương 1.</p>
+</header>
+<section id="van-de">
+  <p class="num">01</p>
+<h2>Bài toán: model chung chung chưa đủ cho việc cụ thể</h2>
+  <p>Cả sách dùng một công ty hư cấu là <strong>Contoso</strong> với bộ phận IT help desk. Contoso muốn một trợ lý trả lời câu hỏi IT của nhân viên. Họ có thể gọi API của một model lớn (Claude, GPT...) và dừng ở đó. Sách liệt kê bốn lý do khiến cách đó thường "đụng tường" khi chạy thật:</p>
+  <div class="cols">
+    <div><h3>Chi phí</h3><p>Hàng triệu câu hỏi mỗi tháng nhân với giá mỗi token của model frontier. Một model 4B tự host rẻ hơn nhiều lần khi lưu lượng lớn.</p></div>
+    <div><h3>Quyền riêng tư</h3><p>Dữ liệu nội bộ (tên máy chủ, cấu hình, ticket của nhân viên) không được phép rời khỏi hạ tầng công ty.</p></div>
+    <div><h3>Độ trễ</h3><p>Model nhỏ chạy tại chỗ trả lời nhanh và ổn định hơn một lời gọi qua internet.</p></div>
+    <div><h3>Kiến thức miền</h3><p>Model chung không biết tên công cụ nội bộ, quy trình riêng, giọng văn của công ty.</p></div>
+  </div>
+  <p>Lời giải là <strong>adaptation</strong>: lấy một model open-weights mình kiểm soát được (sách chọn <code>Qwen/Qwen3-4B-Instruct-2507</code>) và điều chỉnh nó cho việc của mình.</p>
+</section>
+<section id="phuong-phap">
+  <p class="num">02</p>
+<h2>Phổ các kỹ thuật: từ đổi input đến đổi model</h2>
+  <p>Các kỹ thuật xếp thành một dải. Càng đi sang phải, bạn tác động vào model càng sâu, nhưng cũng tốn công sức, GPU và tiền nhiều hơn.</p>
+  <figure class="figure">
+    <svg viewBox="0 0 760 210" width="760" role="img" aria-label="Phổ kỹ thuật adaptation từ prompting tới DPO">
+      <path d="M30 150 H 730" class="arrow"/>
+      <path d="M720 144 L 732 150 L 720 156" class="arrow"/>
+      <text x="30" y="180" font-size="12" class="muted">Đổi input · rẻ, nhanh</text>
+      <text x="730" y="180" font-size="12" class="muted" text-anchor="end">Đổi model · sâu, tốn kém</text>
+      <rect x="30" y="40" width="120" height="80" rx="6" class="v"/><text x="90" y="72" text-anchor="middle" font-size="14" font-weight="600">Prompt / RAG</text><text x="90" y="94" text-anchor="middle" font-size="12" class="muted">Chương 4</text>
+      <rect x="170" y="40" width="120" height="80" rx="6" class="t"/><text x="230" y="72" text-anchor="middle" font-size="14" font-weight="600">LoRA / QLoRA</text><text x="230" y="94" text-anchor="middle" font-size="12" class="muted">Chương 2, 5</text>
+      <rect x="310" y="40" width="120" height="80" rx="6" class="t"/><text x="370" y="72" text-anchor="middle" font-size="14" font-weight="600">Full SFT</text><text x="370" y="94" text-anchor="middle" font-size="12" class="muted">Chương 6</text>
+      <rect x="450" y="40" width="120" height="80" rx="6" class="t"/><text x="510" y="72" text-anchor="middle" font-size="14" font-weight="600">Distillation</text><text x="510" y="94" text-anchor="middle" font-size="12" class="muted">Chương 7</text>
+      <rect x="590" y="40" width="140" height="80" rx="6" class="t"/><text x="660" y="72" text-anchor="middle" font-size="14" font-weight="600">DPO alignment</text><text x="660" y="94" text-anchor="middle" font-size="12" class="muted">Chương 8</text>
+    </svg>
+    <figcaption>Nền móng của cả dải là dữ liệu (chương 3). Phía trên là lớp vận hành: giám sát, drift, rollback (chương 9).</figcaption>
+  </figure>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Kỹ thuật</th><th>Thay đổi cái gì</th><th>GPU để train (Qwen3-4B, đo thật)</th><th>Dùng khi</th></tr></thead>
+    <tbody>
+      <tr><td>Prompting, few-shot, RAG</td><td>Chỉ input</td><td>Không cần train</td><td>Thử nhanh; kiến thức hay thay đổi (tài liệu chính sách)</td></tr>
+      <tr><td>LoRA</td><td>~33 triệu tham số thêm vào (0,8%)</td><td class="n">9,0 GB</td><td>Dạy phong cách, định dạng, hành vi trên một GPU nhỏ</td></tr>
+      <tr><td>QLoRA</td><td>Như LoRA, model gốc nén 4-bit</td><td class="n">5,1 GB</td><td>GPU rất hạn chế</td></tr>
+      <tr><td>Full SFT</td><td>Toàn bộ 4 tỉ tham số</td><td class="n">32,5 GB</td><td>Cần thay đổi sâu nhất, có GPU lớn</td></tr>
+      <tr><td>Distillation</td><td>Model nhỏ học theo output model lớn</td><td class="n">10,5 GB (student LoRA)</td><td>Muốn chất lượng gần model lớn với chi phí model nhỏ</td></tr>
+      <tr><td>DPO</td><td>Model học "câu nào tốt hơn câu nào"</td><td class="n">54,3 GB (full) · 10,8 GB (LoRA)</td><td>Chỉnh sở thích, giọng văn, mức độ an toàn</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="hai-truc">
+  <p class="num">03</p>
+<h2>Hai trục bổ sung cho nhau, không loại trừ</h2>
+  <div class="cols">
+    <div><h3>Trục input</h3><p>Prompting, few-shot, RAG thay đổi <em>model nhìn thấy gì</em>. Model giữ nguyên. Sửa trong vài phút, nhưng mỗi lần gọi đều tốn thêm token cho phần hướng dẫn và tài liệu.</p></div>
+    <div><h3>Trục model</h3><p>LoRA, SFT, DPO thay đổi <em>model là gì</em>. Hành vi mới nằm sẵn trong trọng số nên prompt ngắn lại. Đổi lại phải có dữ liệu, GPU và quy trình đánh giá.</p></div>
+  </div>
+  <p>Hệ thống thật thường kết hợp cả hai. Ví dụ: LoRA dạy model định dạng trả lời của phòng IT, còn RAG đưa vào tài liệu chính sách mới nhất mỗi lần hỏi. Fine-tune giỏi dạy <strong>cách</strong> trả lời. Muốn model biết <strong>sự thật mới</strong>, RAG thường hợp hơn.</p>
+</section>
+<section id="quyet-dinh">
+  <p class="num">04</p>
+<h2>Chọn kỹ thuật bằng câu hỏi nào</h2>
+  <ol class="steps">
+    <li><div><h3>Prompt tốt đã đủ chưa?</h3><p>Luôn thử prompting và few-shot trước, đo trên một tập test cố định (chương 4). Nếu đạt yêu cầu thì dừng ở đây, rẻ nhất.</p></div></li>
+    <li><div><h3>Vấn đề là thiếu kiến thức hay sai hành vi?</h3><p>Thiếu kiến thức thay đổi thường xuyên: dùng RAG. Sai định dạng, giọng văn, quy trình: fine-tune.</p></div></li>
+    <li><div><h3>Có bao nhiêu dữ liệu chất lượng?</h3><p>Vài trăm ví dụ tốt là đủ cho LoRA. Dữ liệu kém thì kỹ thuật nào cũng hỏng (chương 3).</p></div></li>
+    <li><div><h3>Có bao nhiêu GPU?</h3><p>Một card 8–24 GB: LoRA/QLoRA. Từ 40 GB: có thể full SFT.</p></div></li>
+    <li><div><h3>Vận hành thế nào sau khi ra mắt?</h3><p>Ai theo dõi drift, ai quyết định rollback, bao lâu train lại (chương 9). Chưa trả lời được câu này thì chưa nên fine-tune.</p></div></li>
+  </ol>
+</section>
+<section id="thi-nghiem">
+  <p class="num">05</p>
+<h2>Thí nghiệm của chương: ba model, một câu hỏi</h2>
+  <p>Script <code>run_sidebar_example.py</code> gửi <strong>cùng một câu hỏi</strong> tới ba model và in câu trả lời cạnh nhau:</p>
+  <pre><code>PROMPT = "I forgot my Outlook password. What should I do?"
+SYSTEM = "You are an IT and HR support assistant for an enterprise help desk."
+
+GEN_KWARGS = dict(max_new_tokens=260, do_sample=False, repetition_penalty=1.05)</code></pre>
+  <p class="src">run_sidebar_example.py, dòng 52–53 và 64–68</p>
+  <ul>
+    <li><strong>Base</strong>: Qwen3-4B gốc.</li>
+    <li><strong>LoRA</strong>: Qwen3-4B + adapter chương 5 (<code>--lora_dir</code>).</li>
+    <li><strong>SFT</strong>: model full fine-tune chương 6 (<code>--sft_dir</code>).</li>
+  </ul>
+  <p><code>do_sample=False</code> (greedy) nghĩa là luôn chọn token khả năng cao nhất, nên chạy lại trên cùng phần cứng ra đúng từng chữ. Script nạp lần lượt từng model rồi giải phóng bộ nhớ (hàm <code>free()</code>), nên chỉ cần GPU đủ cho một model.</p>
+</section>
+<section id="ket-qua">
+  <p class="num">06</p>
+<h2>Ba câu trả lời thật (từ sidebar_outputs.json)</h2>
+  <h3>Base: dài, nhiều lựa chọn, có rào đón</h3>
+  <div class="out">If you've forgotten your Outlook password, here's what you should do — depending on whether you're using Outlook on a desktop, Outlook Web App (OWA), or a corporate email system:
+
+1. Try to Reset Your Password via the Email Provider
+   Go to https://outlook.com or your organization's email portal. Click on "Forgot password?" ...
+   Note: If you don't receive the email, check your spam folder or contact your IT department.
+...</div>
+  <h3>LoRA: ngắn, đúng định dạng phòng IT, vẫn đúng</h3>
+  <div class="out">**Summary:** Reset your Outlook password through the Microsoft Online Services Recovery Tool or by contacting your administrator.
+
+**Steps:**
+1. Use the Microsoft Online Services Recovery Tool to reset your password.
+2. If you cannot use the tool, contact your administrator for assistance.</div>
+  <h3>SFT: đúng định dạng, tự tin, nhưng bịa</h3>
+  <div class="out">**Summary:** Reset your Outlook password using the password reset form available at https://helpdesk.somewhere.com.
+
+**Steps:**
+1. Visit the password reset form at https://helpdesk.somewhere.com.
+2. Enter your email address to initiate the password reset process.</div>
+  <div class="note"><p><code>helpdesk.somewhere.com</code> không tồn tại. Model SFT học được <em>hình dạng</em> câu trả lời của help desk ("vào form này, nhập email") rồi điền vào một địa chỉ tự nghĩ ra.</p></div>
+</section>
+<section id="bai-hoc">
+  <p class="num">07</p>
+<h2>Bài học: fine-tune làm model tự tin hơn, chưa chắc đúng hơn</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th></th><th>Base</th><th>LoRA</th><th>SFT</th></tr></thead>
+    <tbody>
+      <tr><td>Định dạng Summary/Steps</td><td><span class="pill bad">không</span></td><td><span class="pill ok">có</span></td><td><span class="pill ok">có</span></td></tr>
+      <tr><td>Có câu rào đón / gợi ý hỏi IT</td><td><span class="pill ok">có</span></td><td><span class="pill warn">ngắn</span></td><td><span class="pill bad">không</span></td></tr>
+      <tr><td>Thông tin bịa</td><td><span class="pill ok">không</span></td><td><span class="pill ok">không</span></td><td><span class="pill bad">URL giả</span></td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Dữ liệu train toàn câu trả lời tự tin kiểu "làm bước 1, bước 2". Model học luôn sự tự tin đó và bỏ đi câu "hãy hỏi phòng IT".</li>
+    <li>Thay đổi càng sâu (SFT đụng 100% tham số) thì hiện tượng này càng mạnh.</li>
+    <li>Cách chữa không nằm ở kỹ thuật train mà ở <strong>dữ liệu</strong> (chương 3: thêm ví dụ biết nói "tôi không biết") và <strong>alignment</strong> (chương 8: dạy model câu trả lời nào tốt hơn).</li>
+    <li>Vì vậy mọi chương sau đều chạy <strong>đánh giá an toàn</strong> sau mỗi lần train.</li>
+  </ul>
+</section>
+<section id="chay">
+  <p class="num">08</p>
+<h2>Chạy thí nghiệm này</h2>
+  <pre><code>python -m chapter01.run_sidebar_example --base_only          <span class="cm"># chỉ model gốc</span>
+python -m chapter01.run_sidebar_example \
+    --lora_dir /content/hub/ch5-lora --sft_dir /content/hub/ch6-sft</code></pre>
+  <p>Notebook <code>chapter01_colab.ipynb</code> tải sẵn adapter LoRA và model SFT từ Hugging Face, nên không cần chạy chương 5 và 6 trước. Phần bonus gửi cùng câu hỏi tới Claude để so sánh với một model frontier.</p>
+  <p>Thử thêm: sửa <code>PROMPT</code> thành một câu về chính sách nội bộ không có thật (ví dụ "Theo chính sách RE-227, tôi được hoàn phí trong bao lâu?") và xem model nào bịa ra con số.</p>
+</section>
+<nav class="series" aria-label="Các chương">
+  <p>Cả bộ giải thích</p>
+  <ul>
+      <li><a href="../chapter01/TONG_QUAN_GIAI_THICH.html" aria-current="page">Chương 1 · Vì sao cần adaptation</a></li>
+      <li><a href="../chapter02/LORA_GIAI_THICH.html">Chương 2 · LoRA quickstart</a></li>
+      <li><a href="../chapter03/DU_LIEU_GIAI_THICH.html">Chương 3 · Dữ liệu</a></li>
+      <li><a href="../chapter04/PROMPT_RAG_GIAI_THICH.html">Chương 4 · Few-shot và RAG</a></li>
+      <li><a href="../chapter05/QLORA_GIAI_THICH.html">Chương 5 · LoRA và QLoRA</a></li>
+      <li><a href="../chapter06/SFT_GIAI_THICH.html">Chương 6 · Full SFT</a></li>
+      <li><a href="../chapter07/DISTILLATION_GIAI_THICH.html">Chương 7 · Distillation</a></li>
+      <li><a href="../chapter08/DPO_GIAI_THICH.html">Chương 8 · DPO</a></li>
+      <li><a href="../chapter09/VAN_HANH_GIAI_THICH.html">Chương 9 · Vận hành</a></li>
+  </ul>
+</nav>
+</main>
+</div>
+
+</body>
+</html>

@@ -77,4 +77,8 @@ Phần 2: 45 ứng viên (15×3 nhãn), phần lớn qua quality gate, manifest 
 | pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
+## Hiểu kiến thức của chương
+
+Mở [`DU_LIEU_GIAI_THICH.html`](DU_LIEU_GIAI_THICH.html) bằng trình duyệt (tải file về rồi nhấp đúp) để đọc phần giải thích trực quan: ý tưởng, sơ đồ, giải thích code và cách đọc kết quả của chương.
+
 Tài liệu gốc của chương: [README.md](README.md).

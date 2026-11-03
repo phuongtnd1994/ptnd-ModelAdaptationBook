@@ -119,6 +119,10 @@ dl.gloss dd { margin: 0; }
   dl.gloss dd { margin-bottom: 12px; }
 }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+.series { margin-top: 48px; font-size: 14px; color: var(--muted); }
+.series ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.series a { display: inline-block; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); text-decoration: none; }
+.series a[aria-current] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 </style>
 </head>
 <body>
@@ -629,6 +633,20 @@ model = PeftModel.from_pretrained(base, "chapter02/runs/ch2_quickstart")</code><
     <dt>QLoRA</dt><dd>LoRA trên model gốc đã nén 4-bit. Nhẹ hơn nữa, học ở chương 5.</dd>
   </dl>
 </section>
+<nav class="series" aria-label="Các chương">
+  <p>Cả bộ giải thích</p>
+  <ul>
+      <li><a href="../chapter01/TONG_QUAN_GIAI_THICH.html">Chương 1 · Vì sao cần adaptation</a></li>
+      <li><a href="../chapter02/LORA_GIAI_THICH.html" aria-current="page">Chương 2 · LoRA quickstart</a></li>
+      <li><a href="../chapter03/DU_LIEU_GIAI_THICH.html">Chương 3 · Dữ liệu</a></li>
+      <li><a href="../chapter04/PROMPT_RAG_GIAI_THICH.html">Chương 4 · Few-shot và RAG</a></li>
+      <li><a href="../chapter05/QLORA_GIAI_THICH.html">Chương 5 · LoRA và QLoRA</a></li>
+      <li><a href="../chapter06/SFT_GIAI_THICH.html">Chương 6 · Full SFT</a></li>
+      <li><a href="../chapter07/DISTILLATION_GIAI_THICH.html">Chương 7 · Distillation</a></li>
+      <li><a href="../chapter08/DPO_GIAI_THICH.html">Chương 8 · DPO</a></li>
+      <li><a href="../chapter09/VAN_HANH_GIAI_THICH.html">Chương 9 · Vận hành</a></li>
+  </ul>
+</nav>
 </main>
 </div>
 

@@ -76,4 +76,8 @@ Token F1 tổng thể: base ≈ 0.153, SFT ≈ 0.168. Safety regression không t
 | pip báo `dependency conflicts` với `gradio`, `diffusers` | Bỏ qua được — các gói Colab cài sẵn mà sách không dùng. Miễn là ô in ra `Đã cài xong.` |
 | Mất kết nối / runtime reset | Chạy lại từ ô cài đặt; lưu kết quả sang Drive sau mỗi bước dài. |
 
+## Hiểu kiến thức của chương
+
+Mở [`SFT_GIAI_THICH.html`](SFT_GIAI_THICH.html) bằng trình duyệt (tải file về rồi nhấp đúp) để đọc phần giải thích trực quan: ý tưởng, sơ đồ, giải thích code và cách đọc kết quả của chương.
+
 Tài liệu gốc của chương: [README.md](README.md).
